@@ -3,7 +3,7 @@ package jp.vmi.selenium.selenese;
 import java.util.List;
 import java.util.Map;
 
-import com.google.gson.Gson;
+import org.openqa.selenium.json.Json;
 
 import jp.vmi.selenium.selenese.mutator.SeleneseRunnerMutator;
 
@@ -37,10 +37,11 @@ public class Eval {
         VarsMap varsMap = context.getVarsMap();
         boolean hasStoredVars = script.matches(".*\\bstoredVars\\b.*");
         StringBuilder writer = new StringBuilder();
+        Json json = new Json();
         if (hasStoredVars) {
-            writer.append("return (function(){var storedVars = ");
-            new Gson().toJson(varsMap, writer);
-            writer.append(";\n");
+            writer.append("return (function(){var storedVars = ")
+                .append(json.toJson(varsMap))
+                .append(";\n");
         }
         writer.append("return [");
         if (cast != null)

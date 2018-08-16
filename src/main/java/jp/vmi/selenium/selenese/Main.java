@@ -9,11 +9,10 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.openqa.selenium.json.Json;
+import org.openqa.selenium.json.JsonException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 
 import jp.vmi.selenium.selenese.command.ICommandFactory;
 import jp.vmi.selenium.selenese.config.DefaultConfig;
@@ -163,7 +162,7 @@ public class Main {
         if (config.isIgnoreScreenshotCommand())
             runner.setIgnoredScreenshotCommand(true);
         if (config.getVar() != null) {
-            Gson gson = new Gson();
+            Json json = new Json();
             VarsMap varsMap = runner.getVarsMap();
             for (String expr : config.getVar()) {
                 Matcher matcher = EXPR_RE.matcher(expr);
@@ -172,9 +171,9 @@ public class Main {
                 String name = matcher.group("varName");
                 Object value;
                 try {
-                    value = gson.fromJson(matcher.group("jsonValue"), Object.class);
-                } catch (JsonSyntaxException e) {
-                    throw new IllegalArgumentException("JSON syntax error: " + expr);
+                    value = json.toType(matcher.group("jsonValue"), Json.OBJECT_TYPE);
+                } catch (JsonException e) {
+                    throw new IllegalArgumentException("JSON syntax error: " + expr, e);
                 }
                 varsMap.put(name, value);
             }

@@ -11,10 +11,10 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.json.Json;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 import com.google.common.io.Files;
-import com.google.gson.Gson;
 
 import static jp.vmi.selenium.webdriver.DriverOptions.DriverOption.*;
 
@@ -58,8 +58,7 @@ public class ChromeDriverFactory extends WebDriverFactory {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            @SuppressWarnings("unchecked")
-            Map<String, Object> jsonObject = new Gson().fromJson(json, Map.class);
+            Map<String, Object> jsonObject = new Json().toType(json, Json.MAP_TYPE);
             for (Entry<String, Object> entry : jsonObject.entrySet())
                 options.setExperimentalOption(entry.getKey(), entry.getValue());
         }
