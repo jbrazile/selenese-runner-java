@@ -24,10 +24,9 @@ import java.util.WeakHashMap;
  * Bean map.
  *
  * @param <T> Type of bean.
- * @param <K> Type of key of bean map.
  * @param <V> Type of value of bean map.
  */
-public class BeanMap<T, K, V> extends AbstractMap<K, V> {
+public class BeanMap<T, V> extends AbstractMap<String, V> {
 
     // cache of AccessorMap.
     private static final WeakHashMap<Class<?>, AccessorMap<?>> accessorMaps = new WeakHashMap<>();
@@ -225,14 +224,14 @@ public class BeanMap<T, K, V> extends AbstractMap<K, V> {
     }
 
     @Override
-    public V put(K key, V value) {
+    public V put(String key, V value) {
         V prevValue;
         try {
             prevValue = get(key);
         } catch (UnsupportedOperationException e) {
             prevValue = null;
         }
-        accessorMap.setValue(key.toString(), object, value);
+        accessorMap.setValue(key, object, value);
         return prevValue;
     }
 
@@ -246,20 +245,19 @@ public class BeanMap<T, K, V> extends AbstractMap<K, V> {
         throw new UnsupportedOperationException();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public Set<K> keySet() {
-        return (Set<K>) accessorMap.keySet();
+    public Set<String> keySet() {
+        return accessorMap.keySet();
     }
 
     @Override
-    public Set<Entry<K, V>> entrySet() {
-        return new AbstractSet<Entry<K, V>>() {
+    public Set<Entry<String, V>> entrySet() {
+        return new AbstractSet<Entry<String, V>>() {
             @Override
-            public Iterator<Entry<K, V>> iterator() {
-                return new Iterator<Entry<K, V>>() {
+            public Iterator<Entry<String, V>> iterator() {
+                return new Iterator<Entry<String, V>>() {
 
-                    private final Iterator<K> keyIter = BeanMap.this.keySet().iterator();
+                    private final Iterator<String> keyIter = BeanMap.this.keySet().iterator();
 
                     @Override
                     public boolean hasNext() {
@@ -267,10 +265,10 @@ public class BeanMap<T, K, V> extends AbstractMap<K, V> {
                     }
 
                     @Override
-                    public Entry<K, V> next() {
-                        K key = keyIter.next();
+                    public Entry<String, V> next() {
+                        String key = keyIter.next();
                         V value = BeanMap.this.get(key);
-                        return new SimpleEntry<K, V>(key, value);
+                        return new SimpleEntry<>(key, value);
                     }
                 };
             }
