@@ -86,7 +86,7 @@ public class BeanMapTest {
 
     @Test
     public void test() {
-        BeanMap<Object, String, String> bm;
+        BeanMap<Object, String> bm;
         bm = new BeanMap<>(new Bean00());
         assertThat(bm.size(), is(0));
         for (Object o : new Object[] {

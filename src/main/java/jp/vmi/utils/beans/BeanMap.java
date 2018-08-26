@@ -289,4 +289,13 @@ public class BeanMap<T, V> extends AbstractMap<String, V> {
     public Type getValueType(String key) {
         return accessorMap.getValueType(key);
     }
+
+    /**
+     * Get original object.
+     *
+     * @return object.
+     */
+    public T getObject() {
+        return object;
+    }
 }

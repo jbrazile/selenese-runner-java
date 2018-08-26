@@ -27,6 +27,7 @@ public abstract class SideBase {
 
     @Override
     public String toString() {
-        return Side.toJson(this);
+        //return Side.toJson(this);
+        return "";
     }
 }

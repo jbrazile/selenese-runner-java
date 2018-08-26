@@ -16,12 +16,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import org.openqa.selenium.json.Json;
 
 import jp.vmi.selenium.selenese.parser.SideCommandList.CmdElem;
 
@@ -44,33 +39,33 @@ public class SideCommandList implements List<CmdElem> {
         public CmdAttr attr;
     }
 
-    private static Gson newGson() {
-        return new GsonBuilder()
-            .registerTypeAdapter(List.class, (JsonDeserializer<List<CmdElem>>) (json, typeOfT, context) -> {
-                List<CmdElem> list = new ArrayList<>();
-                json.getAsJsonArray().forEach(elem -> list.add(context.deserialize(elem, CmdElem.class)));
-                return list;
-            })
-            .registerTypeAdapter(CmdElem.class, (JsonDeserializer<CmdElem>) (json, typeOfT, context) -> {
-                CmdElem cmdElem = new CmdElem();
-                JsonArray array = json.getAsJsonArray();
-                cmdElem.cmd = array.get(0).getAsString();
-                cmdElem.attr = context.deserialize(array.get(1), CmdAttr.class);
-                return cmdElem;
-            })
-            .registerTypeAdapter(CmdAttr.class, (JsonDeserializer<CmdAttr>) (json, typeOfT, context) -> {
-                CmdAttr cmdAttr = new CmdAttr();
-                JsonObject object = json.getAsJsonObject();
-                JsonElement name = object.get("name");
-                if (name != null)
-                    cmdAttr.name = name.toString();
-                JsonElement type = object.get("type");
-                if (type != null)
-                    cmdAttr.type = type.toString();
-                return cmdAttr;
-            })
-            .create();
-    }
+    //    private static Gson newGson() {
+    //        return new GsonBuilder()
+    //            .registerTypeAdapter(List.class, (JsonDeserializer<List<CmdElem>>) (json, typeOfT, context) -> {
+    //                List<CmdElem> list = new ArrayList<>();
+    //                json.getAsJsonArray().forEach(elem -> list.add(context.deserialize(elem, CmdElem.class)));
+    //                return list;
+    //            })
+    //            .registerTypeAdapter(CmdElem.class, (JsonDeserializer<CmdElem>) (json, typeOfT, context) -> {
+    //                CmdElem cmdElem = new CmdElem();
+    //                JsonArray array = json.getAsJsonArray();
+    //                cmdElem.cmd = array.get(0).getAsString();
+    //                cmdElem.attr = context.deserialize(array.get(1), CmdAttr.class);
+    //                return cmdElem;
+    //            })
+    //            .registerTypeAdapter(CmdAttr.class, (JsonDeserializer<CmdAttr>) (json, typeOfT, context) -> {
+    //                CmdAttr cmdAttr = new CmdAttr();
+    //                JsonObject object = json.getAsJsonObject();
+    //                JsonElement name = object.get("name");
+    //                if (name != null)
+    //                    cmdAttr.name = name.toString();
+    //                JsonElement type = object.get("type");
+    //                if (type != null)
+    //                    cmdAttr.type = type.toString();
+    //                return cmdAttr;
+    //            })
+    //            .create();
+    //    }
 
     /**
      * Constructor.
@@ -87,9 +82,12 @@ public class SideCommandList implements List<CmdElem> {
             while (!(line = r.readLine()).matches("\\s*\\]\\)\\s*"))
                 listStr.append(line);
             listStr.append("]");
-            @SuppressWarnings("unchecked")
-            List<CmdElem> list = newGson().fromJson(listStr.toString(), List.class);
-            this.list = list;
+            //@SuppressWarnings("unchecked")
+            //new Json().toType(source, typeOfT);
+            List<?> parsedList = new Json().toType(listStr.toString(), List.class);
+            list = new ArrayList<>();
+            //List<CmdElem> list = newGson().fromJson(listStr.toString(), List.class);
+            //this.list = list;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

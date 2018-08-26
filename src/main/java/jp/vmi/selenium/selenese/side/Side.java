@@ -4,13 +4,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import org.openqa.selenium.json.Json;
+import org.openqa.selenium.json.JsonInput;
+import org.openqa.selenium.json.PropertySetting;
+import org.openqa.selenium.json.TypeCoercer;
 
 import jp.vmi.selenium.selenese.InvalidSeleneseException;
 import jp.vmi.selenium.selenese.parser.ParserUtils;
@@ -77,19 +81,27 @@ public class Side {
      */
     public static Side parse(String filename, InputStream is) throws InvalidSeleneseException {
         try (Reader r = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-            return new Side(filename, new Gson().fromJson(r, SideFile.class));
+            JsonInput input = new Json().newInput(r);
+            input.addCoercers(new TypeCoercer<String>() {
+
+                @Override
+                public boolean test(Class<?> aClass) {
+                    // TODO 自動生成されたメソッド・スタブ
+                    return false;
+                }
+
+                @Override
+                public BiFunction<JsonInput, PropertySetting, String> apply(Type type) {
+                    // TODO 自動生成されたメソッド・スタブ
+                    return null;
+                }
+            });
+            JsonInput jsonInput = new Json().newInput(r);
+            jsonInput.addCoercers(SideFile.newTypeCoercer());
+            SideFile sideFile = jsonInput.read(SideFile.class);
+            return new Side(filename, sideFile);
         } catch (IOException e) {
             throw new InvalidSeleneseException(e, filename, ParserUtils.getNameFromFilename(filename));
         }
-    }
-
-    /**
-     * Serialize to JSON.
-     *
-     * @param object object.
-     * @return JSON string.
-     */
-    public static String toJson(Object object) {
-        return new GsonBuilder().setPrettyPrinting().create().toJson(object);
     }
 }
