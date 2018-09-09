@@ -1,5 +1,9 @@
 package jp.vmi.selenium.selenese.side;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 /**
  * "command" element of side format.
  */
@@ -9,8 +13,20 @@ public class SideCommand {
     private String id;
     private String command;
     private String target;
+    private List<String> targets;
     private String value;
     private String comment;
+
+    public SideCommand() {
+        this(false);
+    }
+
+    public SideCommand(boolean isGen) {
+        if (isGen) {
+            id = UUID.randomUUID().toString();
+            targets = new ArrayList<>();
+        }
+    }
 
     public String getId() {
         return id;
@@ -34,6 +50,14 @@ public class SideCommand {
 
     public void setTarget(String target) {
         this.target = target;
+    }
+
+    public List<String> getTargets() {
+        return targets;
+    }
+
+    public void setTargets(List<String> targets) {
+        this.targets = targets;
     }
 
     public String getValue() {

@@ -1,5 +1,7 @@
 package jp.vmi.selenium.selenese.side;
 
+import java.util.UUID;
+
 /**
  * base element of side format.
  */
@@ -9,12 +11,13 @@ public abstract class SideBase {
     private String id;
     private String name;
 
-    public String getId() {
-        return id;
+    public SideBase(boolean isGen) {
+        if (isGen)
+            id = UUID.randomUUID().toString();
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public String getId() {
+        return id;
     }
 
     public void setName(String name) {
