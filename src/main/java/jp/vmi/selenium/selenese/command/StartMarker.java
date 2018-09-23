@@ -68,11 +68,23 @@ public class StartMarker implements ICommand {
     }
 
     @Override
+    public void setStartBlock(StartBlock startBlock) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public StartBlock getStartBlock() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    @Deprecated
     public void setStartLoop(StartLoop startLoop) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public StartLoop getStartLoop() {
         throw new UnsupportedOperationException();
     }

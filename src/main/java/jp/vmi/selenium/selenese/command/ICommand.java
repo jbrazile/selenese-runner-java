@@ -86,17 +86,37 @@ public interface ICommand {
     Result getResult();
 
     /**
+     * Set beginning-of-block command.
+     *
+     * @param startBlock beginning-of-block command.
+     */
+    void setStartBlock(StartBlock startBlock);
+
+    /**
+     * Get beginning-of-block command.
+     *
+     * @return beginning-of-block command.
+     */
+    StartBlock getStartBlock();
+
+    /**
      * Set beginning-of-loop command.
      *
      * @param startLoop beginning-of-loop command.
+     *
+     * @deprecated use {@link #setStartBlock(StartBlock)} instaed.
      */
+    @Deprecated
     void setStartLoop(StartLoop startLoop);
 
     /**
      * Get beginning-of-loop command.
      *
      * @return beginning-of-loop command.
+     *
+     * @deprecated use {@link #getStartBlock()} instaed.
      */
+    @Deprecated
     StartLoop getStartLoop();
 
     /**

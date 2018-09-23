@@ -14,11 +14,11 @@ public class CommandSequence {
 
     private static class Counter {
 
-        public StartLoop startLoop;
+        public StartBlock startBlock;
         public int count;
 
-        public Counter(StartLoop startLoop, int count) {
-            this.startLoop = startLoop;
+        public Counter(StartBlock startBlock, int count) {
+            this.startBlock = startBlock;
             this.count = count;
         }
     }
@@ -34,17 +34,17 @@ public class CommandSequence {
      */
     public CommandSequence(CommandSequence parent) {
         this.parent = parent;
-        counters.add(tail = new Counter(StartLoop.NO_START_LOOP, 0));
+        counters.add(tail = new Counter(StartBlock.NO_START_BLOCK, 0));
     }
 
-    private static List<StartLoop> getListOfStartLoop(ICommand command) {
-        List<StartLoop> result;
-        StartLoop startLoop = command.getStartLoop();
-        if (startLoop == StartLoop.NO_START_LOOP)
+    private static List<StartBlock> getListOfStartBlock(ICommand command) {
+        List<StartBlock> result;
+        StartBlock startBlock = command.getStartBlock();
+        if (startBlock == StartBlock.NO_START_BLOCK)
             result = new ArrayList<>();
         else
-            result = getListOfStartLoop((ICommand) startLoop);
-        result.add(startLoop);
+            result = getListOfStartBlock((ICommand) startBlock);
+        result.add(startBlock);
         return result;
     }
 
@@ -54,16 +54,16 @@ public class CommandSequence {
      * @param command current command.
      */
     public void increment(ICommand command) {
-        if (tail.startLoop == command.getStartLoop()) {
+        if (tail.startBlock == command.getStartBlock()) {
             tail.count++;
         } else {
             Iterator<Counter> citer = counters.iterator();
-            ListIterator<StartLoop> siter = getListOfStartLoop(command).listIterator();
+            ListIterator<StartBlock> siter = getListOfStartBlock(command).listIterator();
             int index = 0;
             while (citer.hasNext()) {
                 if (!siter.hasNext())
                     break;
-                if (citer.next().startLoop != siter.next()) {
+                if (citer.next().startBlock != siter.next()) {
                     siter.previous();
                     break;
                 }
@@ -73,13 +73,13 @@ public class CommandSequence {
                 counters.subList(index, counters.size()).clear();
             counters.get(counters.size() - 1).count++;
             while (siter.hasNext()) {
-                StartLoop s = siter.next();
+                StartBlock s = siter.next();
                 counters.add(new Counter(s, 1));
             }
             tail = counters.get(counters.size() - 1);
         }
-        if (command instanceof StartLoop)
-            counters.add(tail = new Counter((StartLoop) command, 1));
+        if (command instanceof StartBlock)
+            counters.add(tail = new Counter((StartBlock) command, 1));
     }
 
     /**

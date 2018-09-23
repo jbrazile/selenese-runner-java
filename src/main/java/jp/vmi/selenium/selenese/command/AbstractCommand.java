@@ -15,7 +15,6 @@ import jp.vmi.selenium.selenese.result.Failure;
 import jp.vmi.selenium.selenese.result.Result;
 import jp.vmi.selenium.selenese.utils.LoggerUtils;
 
-import static jp.vmi.selenium.selenese.command.StartLoop.*;
 import static jp.vmi.selenium.selenese.result.Unexecuted.*;
 
 /**
@@ -29,7 +28,7 @@ public abstract class AbstractCommand implements ICommand {
     private final ArgumentType[] argTypes;
     private final int[] locatorIndexes;
     private Result result = UNEXECUTED;
-    private StartLoop startLoop = NO_START_LOOP;
+    private StartBlock startBlock = StartBlock.NO_START_BLOCK;
     private List<Screenshot> screenshots = null;
 
     /**
@@ -167,13 +166,40 @@ public abstract class AbstractCommand implements ICommand {
     }
 
     @Override
-    public void setStartLoop(StartLoop startLoop) {
-        this.startLoop = startLoop;
+    public void setStartBlock(StartBlock startBlock) {
+        this.startBlock = startBlock;
     }
 
     @Override
-    public StartLoop getStartLoop() {
-        return startLoop;
+    public StartBlock getStartBlock() {
+        return startBlock;
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    final public void setStartLoop(StartLoop startLoop) {
+        setStartBlock(startLoop);
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    final public StartLoop getStartLoop() {
+        StartBlock startBlock = getStartBlock();
+        if (startBlock instanceof StartLoop)
+            return (StartLoop) startBlock;
+        else
+            return new StartLoop() {
+
+                @Override
+                public void setEndBlock(EndBlock endBlock) {
+                    startBlock.setEndBlock(endBlock);
+                }
+
+                @Override
+                public void setEndLoop(EndLoop endLoop) {
+                    startBlock.setEndBlock(endLoop);
+                }
+            };
     }
 
     @Override
