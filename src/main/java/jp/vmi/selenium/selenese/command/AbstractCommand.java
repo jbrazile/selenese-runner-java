@@ -9,7 +9,12 @@ import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriverException;
 
 import jp.vmi.selenium.selenese.Context;
+import jp.vmi.selenium.selenese.SeleneseRunnerRuntimeException;
+import jp.vmi.selenium.selenese.SourceType;
+import jp.vmi.selenium.selenese.VarsMap;
 import jp.vmi.selenium.selenese.locator.Locator;
+import jp.vmi.selenium.selenese.parser.SideCommandInfo;
+import jp.vmi.selenium.selenese.parser.SideCommands;
 import jp.vmi.selenium.selenese.result.Error;
 import jp.vmi.selenium.selenese.result.Failure;
 import jp.vmi.selenium.selenese.result.Result;
@@ -27,6 +32,7 @@ public abstract class AbstractCommand implements ICommand {
     private final String[] args;
     private final ArgumentType[] argTypes;
     private final int[] locatorIndexes;
+    private final SideCommandInfo commandInfo;
     private Result result = UNEXECUTED;
     private StartBlock startBlock = StartBlock.NO_START_BLOCK;
     private List<Screenshot> screenshots = null;
@@ -68,6 +74,7 @@ public abstract class AbstractCommand implements ICommand {
             }
         }
         this.locatorIndexes = Arrays.copyOf(locatorIndexes, locCnt);
+        this.commandInfo = SideCommands.getInstance().getCommandInfoMap().get(name);
     }
 
     @Override
@@ -100,6 +107,28 @@ public abstract class AbstractCommand implements ICommand {
     @Override
     public String[] getArguments() {
         return args;
+    }
+
+    @Override
+    public String[] getVariableResolvedArguments(SourceType sourceType, VarsMap varsMap) {
+        if (sourceType == SourceType.SIDE && commandInfo != null) {
+            String[] curArgs = new String[args.length];
+            switch (args.length) {
+            case 2:
+                curArgs[1] = varsMap.replaceVars(commandInfo.isValueScript(), args[1]);
+                // fall through.
+            case 1:
+                curArgs[0] = varsMap.replaceVars(commandInfo.isTargetScript(), args[0]);
+                // fall through.
+            case 0:
+                break;
+            default:
+                throw new SeleneseRunnerRuntimeException("Don't support 3 or more arguments.");
+            }
+            return curArgs;
+        } else {
+            return Arrays.stream(getArguments()).map(arg -> varsMap.replaceVars(false, arg)).toArray(String[]::new);
+        }
     }
 
     @Override

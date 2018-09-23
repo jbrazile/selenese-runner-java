@@ -4,14 +4,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,67 +24,26 @@ public class SideCommands {
     /** Supported Selenium IDE version. */
     public static final String SUPPORTED_VERSION = "v3.3.1";
 
-    @SuppressWarnings("javadoc")
-    public static enum TargetType {
-        // no target.
-        NONE(null),
-        // locator.
-        LOCATOR("locator"),
-        // region.
-        REGION("region"),
-        ;
-
-        public final String name;
-
-        TargetType(String name) {
-            this.name = name;
-        }
-    }
-
-    @SuppressWarnings("javadoc")
-    public static class ArgType {
-        public final String id;
-        public final String name;
-        public final String description;
-
-        public ArgType(String id, String name, String description) {
-            this.id = id;
-            this.name = name;
-            this.description = description;
-        }
-    }
-
-    @SuppressWarnings("javadoc")
-    public class Command {
-        public final String id;
-        public final String name;
-        public final String description;
-        public final TargetType type;
-        public final ArgType target;
-        public final ArgType value;
-
-        public Command(String id, String name, String description, String type, String target, String value) {
-            this.id = id;
-            this.name = name;
-            this.description = description;
-            this.type = getTargetType(type);
-            this.target = getArgType(target);
-            this.value = getArgType(value);
-        }
-    }
-
     private static final Logger log = LoggerFactory.getLogger(SideCommands.class);
 
-    private static final String TARGET_TYPES_PREFIX = "TargetTypes.";
-    private static final String ARG_TYPES_PREFIX = "ArgTypes.";
+    private static final Pattern TARGET_TYPE_RE = Pattern.compile("\\s*(\\w+)\\s*:.*");
 
-    private final Map<String, ArgType> argTypes = new HashMap<>();
-    private final Map<String, Command> commandList = new LinkedHashMap<>();
+    private static SideCommands instance = null;
 
     /**
-     * Constructor.
+     * Get instance of SideCommands.
+     *
+     * @return instance of SideCommands.
      */
-    public SideCommands() {
+    public static synchronized SideCommands getInstance() {
+        if (instance == null)
+            instance = new SideCommands();
+        return instance;
+    }
+
+    private final Map<String, SideCommandInfo> commandInfoMap = new LinkedHashMap<>();
+
+    private SideCommands() {
         try (BufferedReader r = new BufferedReader(
             new InputStreamReader(SideCommands.class.getResourceAsStream("/selenium-ide/Command.js"), StandardCharsets.UTF_8))) {
             parseCommandJs(r);
@@ -94,13 +52,11 @@ public class SideCommands {
         }
     }
 
-    private static final Pattern TARGET_TYPE_RE = Pattern.compile("\\s*(\\w+)\\s*:.*");
-
-    private static String readTargetTypes(String firstLine, BufferedReader r) throws IOException {
+    private static boolean verifyTargetTypes(String firstLine, BufferedReader r) throws IOException {
         // export const TargetTypes = {
         if (!firstLine.matches("export\\s+const\\s+TargetTypes\\s*=\\s*\\{")) {
             log.trace("Skip: [{}]", firstLine);
-            return null;
+            return false;
         }
         log.debug("Start checking TargetTypes.");
         String line;
@@ -114,14 +70,14 @@ public class SideCommands {
             }
             String type = matcher.group(1);
             try {
-                TargetType.valueOf(type);
+                TargetTypes.valueOf(type);
                 log.debug("Type: {} - OK", type);
             } catch (IllegalArgumentException e) {
                 log.warn("Unsupported target type: " + type);
             }
         }
         log.debug("End checking TargetTypes.");
-        return "DONE";
+        return true;
     }
 
     private static void readPartial(BufferedReader r, String endMark, StringBuilder buf) throws IOException {
@@ -168,13 +124,41 @@ public class SideCommands {
         return result;
     }
 
-    private void parseArgTypes(String argTypesStr) {
+    private boolean verifyArgTypes(String argTypesStr) {
         @SuppressWarnings("unchecked")
         Map<String, Map<String, String>> map = new Gson().fromJson(argTypesStr, Map.class);
-        map.forEach((key, value) -> {
-            ArgType argType = new ArgType(key, value.get("name"), value.get("description"));
-            this.argTypes.put(key, argType);
+        EnumSet<ArgTypes> all = EnumSet.allOf(ArgTypes.class);
+        all.remove(ArgTypes.noArg);
+        map.forEach((typeId, entry) -> {
+            ArgTypes argType;
+            try {
+                argType = ArgTypes.valueOf(typeId);
+            } catch (IllegalArgumentException e) {
+                log.warn("ArgTypes.{} is not defined.", typeId);
+                return;
+            }
+            String name = entry.get("name");
+            String description = entry.get("description");
+            String value = entry.get("value");
+            String descLabel = "description";
+            if (description == null) {// for ArgTypes.message
+                description = value;
+                descLabel = "value";
+            }
+            boolean matchName = argType.getName().equals(name);
+            boolean matchDesc = argType.getDescription().equals(description);
+            if (!matchName || !matchDesc) {
+                log.warn("ArgTypes.{} is incompatible:", typeId, descLabel);
+                if (!matchName)
+                    log.warn("- name: [{}] != [{}]", argType.getName(), name);
+                if (!matchDesc)
+                    log.warn("- {}: [{}] != [{}]", descLabel, argType.getDescription(), description);
+            }
+            all.remove(argType);
         });
+        if (!all.isEmpty())
+            all.forEach(typeId -> log.warn("ArgTypes.{} is not defined in Command.js", typeId));
+        return true;
     }
 
     private void parseCommandList(String commandListStr) {
@@ -189,23 +173,25 @@ public class SideCommands {
             String type = map.get("type");
             String target = map.get("target");
             String value = map.get("value");
-            Command command = new Command(id, name, description, type, target, value);
-            this.commandList.put(id, command);
+            SideCommandInfo commandInfo = new SideCommandInfo(id, name, description,
+                TargetTypes.parse(type), ArgTypes.parse(target), ArgTypes.parse(value));
+            commandInfoMap.put(id, commandInfo);
         });
     }
 
     private void parseCommandJs(BufferedReader r) throws IOException {
-        String targetTypesStr = null;
-        String argTypesStr = null;
+        boolean isTargetTypesVerified = false;
+        boolean isArgTypesVerified = false;
         String commandListStr = null;
         String line;
         while ((line = r.readLine()) != null) {
             line = line.trim();
-            if (targetTypesStr == null) {
-                targetTypesStr = readTargetTypes(line, r);
-            } else if (argTypesStr == null) {
-                if ((argTypesStr = readArgTypes(line, r)) != null)
-                    parseArgTypes(argTypesStr);
+            if (!isTargetTypesVerified) {
+                isTargetTypesVerified = verifyTargetTypes(line, r);
+            } else if (!isArgTypesVerified) {
+                String argTypesStr = readArgTypes(line, r);
+                if (argTypesStr != null)
+                    isArgTypesVerified = verifyArgTypes(argTypesStr);
             } else if (commandListStr == null) {
                 if ((commandListStr = readCommandList(line, r)) != null)
                     parseCommandList(commandListStr);
@@ -214,43 +200,11 @@ public class SideCommands {
     }
 
     /**
-     * Get target type.
-     *
-     * @param key target type.
-     * @return TargetType.
-     */
-    public TargetType getTargetType(String key) {
-        if (StringUtils.isEmpty(key))
-            return TargetType.NONE;
-        if (key.startsWith(TARGET_TYPES_PREFIX))
-            key = key.substring(TARGET_TYPES_PREFIX.length());
-        try {
-            return TargetType.valueOf(key);
-        } catch (IllegalArgumentException e) {
-            return TargetType.NONE;
-        }
-    }
-
-    /**
-     * Get argument type.
-     *
-     * @param key argument type.
-     * @return instance of ArgType.
-     */
-    public ArgType getArgType(String key) {
-        if (StringUtils.isEmpty(key))
-            return null;
-        if (key.startsWith(ARG_TYPES_PREFIX))
-            key = key.substring(ARG_TYPES_PREFIX.length());
-        return argTypes.get(key);
-    }
-
-    /**
      * Get map of command list.
      *
      * @return map of command list.
      */
-    public Map<String, Command> getCommandList() {
-        return commandList;
+    public Map<String, SideCommandInfo> getCommandInfoMap() {
+        return commandInfoMap;
     }
 }

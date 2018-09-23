@@ -147,7 +147,7 @@ public class CommandList implements Iterable<ICommand> {
                 sequence.increment(command);
                 List<Screenshot> ss = command.getScreenshots();
                 int prevSSIndex = (ss == null) ? 0 : ss.size();
-                String[] curArgs = context.getVarsMap().replaceVarsForArray(command.getArguments());
+                String[] curArgs = command.getVariableResolvedArguments(context.getCurrentTestCase().getSourceType(), context.getVarsMap());
                 evalCurArgs(context, curArgs);
                 Result result = doCommand(context, command, curArgs);
                 if (result.isAborted())
@@ -168,5 +168,10 @@ public class CommandList implements Iterable<ICommand> {
             context.popCommandListIterator();
         }
         return cresultList.getResult();
+    }
+
+    @Override
+    public String toString() {
+        return commandList.toString();
     }
 }

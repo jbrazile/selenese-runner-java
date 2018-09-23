@@ -94,9 +94,9 @@ public class CommandDumper {
                 .sorted((e1, e2) -> e1.getKey().compareTo(e2.getKey()))
                 .forEach(entry -> System.out.println(entry.getKey() + "," + entry.getValue()));
         } else if ("--side".equals(args[0])) {
-            SideCommands cmds = new SideCommands();
+            SideCommands cmds = SideCommands.getInstance();
             List<String> list = new ArrayList<>();
-            cmds.getCommandList().forEach((id, cmd) -> list.add(id));
+            cmds.getCommandInfoMap().forEach((id, cmd) -> list.add(id));
             System.out.println("* Supported status of Selenium IDE commands:");
             list.forEach(cmd -> System.out.printf("  [%s] %s\n",
                 commandInfo.containsKey(cmd) ? "OK" : "--", cmd));
