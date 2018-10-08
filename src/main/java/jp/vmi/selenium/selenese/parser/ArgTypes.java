@@ -69,6 +69,9 @@ public enum ArgTypes {
     region("region",
         "Specify a rectangle with coordinates and lengths (e.g., \"x: 257, y: 300, width: 462, height: 280\")."),
 
+    resolution("resolution",
+        "Specify a window resolution using WidthxHeight. (e.g., 1280x800)."),
+
     script("script",
         "The JavaScript snippet to run."),
 
