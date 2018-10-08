@@ -121,13 +121,14 @@ public class CommandFactory implements ICommandFactory {
         addConstructor(Gotolabel.class, "gotoLabel");
         addConstructor(GotoIf.class);
 
-		// flow control commands of Selenium IDE (TNG)
+        // flow control commands of Selenium IDE (TNG)
         addConstructor(If.class);
         addConstructor(ElseIf.class);
         addConstructor(Else.class);
         addConstructor(End.class);
-		addConstructor(Do.class);
+        addConstructor(Do.class);
         addConstructor(RepeatIf.class);
+        addConstructor(Times.class);
 
         // commands for comment
         addConstructor(Comment.class);
